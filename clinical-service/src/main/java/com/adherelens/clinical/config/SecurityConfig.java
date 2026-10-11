@@ -32,6 +32,9 @@ public class SecurityConfig {
                 // First matching rule wins, so the specific rules come before the general ones.
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/patients/*/dose-suggestions").hasRole("DOCTOR")
+                        .requestMatchers(HttpMethod.GET, "/api/drug-rules/**").hasAnyRole("HOSPITAL_ADMIN", "DOCTOR", "NURSE")
+                        .requestMatchers(HttpMethod.POST, "/api/drug-rules/**").hasRole("DOCTOR")
                         .requestMatchers(HttpMethod.POST, "/api/dose-slots/*/record").hasAnyRole("NURSE", "DOCTOR")
                         .requestMatchers(HttpMethod.PATCH, "/api/regimens/*").hasAnyRole("NURSE", "DOCTOR")
                         .requestMatchers(HttpMethod.GET, "/api/dose-slots/**", "/api/patients/**", "/api/regimens/**")

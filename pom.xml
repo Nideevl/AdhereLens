@@ -22,6 +22,7 @@
         <module>auth-common</module>
         <module>identity-service</module>
         <module>clinical-service</module>
+        <module>notification-service</module>
     </modules>
 
     <properties>
