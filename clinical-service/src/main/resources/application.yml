@@ -35,3 +35,6 @@ adherelens:
     zone: Asia/Kolkata
     # A response within this many minutes of the due time counts as HIT; later is DELAYED.
     on-time-minutes: 15
+  internal:
+    # Shared key for service-to-service calls (notification-service reads patient contacts).
+    api-key: ${INTERNAL_API_KEY:dev-only-internal-key-change-me}

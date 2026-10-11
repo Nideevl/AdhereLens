@@ -32,6 +32,11 @@ public class SecurityConfig {
                 // First matching rule wins, so the specific rules come before the general ones.
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/error").permitAll()
+                        // Service-to-service: guarded by the X-Internal-Key check in the controller.
+                        .requestMatchers("/internal/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/regimens/*/side-effects").hasAnyRole("NURSE", "DOCTOR")
+                        .requestMatchers(HttpMethod.GET, "/api/side-effects/**").hasAnyRole("HOSPITAL_ADMIN", "DOCTOR", "NURSE")
+                        .requestMatchers(HttpMethod.POST, "/api/side-effects/**").hasRole("DOCTOR")
                         .requestMatchers(HttpMethod.GET, "/api/patients/*/dose-suggestions").hasRole("DOCTOR")
                         .requestMatchers(HttpMethod.GET, "/api/drug-rules/**").hasAnyRole("HOSPITAL_ADMIN", "DOCTOR", "NURSE")
                         .requestMatchers(HttpMethod.POST, "/api/drug-rules/**").hasRole("DOCTOR")

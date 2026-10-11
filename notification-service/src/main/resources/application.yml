@@ -30,7 +30,21 @@ spring:
 adherelens:
   jwt:
     secret: ${JWT_SECRET:dev-only-secret-change-me-before-any-real-use-0123456789}
+  internal:
+    # Shared key for calling clinical-service's /internal endpoints. Must match its api-key.
+    api-key: ${INTERNAL_API_KEY:dev-only-internal-key-change-me}
+  clinical:
+    base-url: ${CLINICAL_BASE_URL:http://localhost:8082}
   notification:
-    # Outpatient reminders: minutes after the due time. Only attempts that fall before the
-    # window closes are created, so the follow-ups are always bounded.
-    outpatient-offsets-minutes: 0,15,30
+    # Outpatient reminders as "minutes after due time:channel". Only attempts that fall before
+    # the window closes are created, so the follow-ups are always bounded.
+    outpatient-schedule: "0:SMS,15:SMS,30:CALL"
+  twilio:
+    # false = log only, nothing is sent. true = real texts and calls through Twilio.
+    enabled: false
+    account-sid: ${TWILIO_ACCOUNT_SID:}
+    auth-token: ${TWILIO_AUTH_TOKEN:}
+    from-number: ${TWILIO_FROM_NUMBER:}
+    # Added to numbers stored without a leading +.
+    default-country-code: ${TWILIO_DEFAULT_COUNTRY_CODE:+91}
+    base-url: https://api.twilio.com

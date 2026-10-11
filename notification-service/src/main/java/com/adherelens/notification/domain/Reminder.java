@@ -41,6 +41,10 @@ public class Reminder {
     private Instant windowClosesAt;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, updatable = false, length = 10)
+    private ReminderChannel channel;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ReminderStatus status = ReminderStatus.PENDING;
 
@@ -55,11 +59,12 @@ public class Reminder {
     }
 
     public Reminder(UUID doseSlotId, UUID hospitalId, UUID patientId, int attemptNo,
-                    Instant scheduledFor, Instant windowClosesAt) {
+                    ReminderChannel channel, Instant scheduledFor, Instant windowClosesAt) {
         this.doseSlotId = doseSlotId;
         this.hospitalId = hospitalId;
         this.patientId = patientId;
         this.attemptNo = attemptNo;
+        this.channel = channel;
         this.scheduledFor = scheduledFor;
         this.windowClosesAt = windowClosesAt;
     }
@@ -82,6 +87,7 @@ public class Reminder {
     public UUID getHospitalId() { return hospitalId; }
     public UUID getPatientId() { return patientId; }
     public int getAttemptNo() { return attemptNo; }
+    public ReminderChannel getChannel() { return channel; }
     public Instant getScheduledFor() { return scheduledFor; }
     public Instant getWindowClosesAt() { return windowClosesAt; }
     public ReminderStatus getStatus() { return status; }
