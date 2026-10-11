@@ -6,15 +6,14 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Published when a scheduled dose becomes due. Carries no personal data:
- * only internal ids. Contact details are looked up inside the hospital-private
- * side by whichever service needs to notify someone.
+ * Published when a scheduled dose becomes due. Carries only internal ids, no personal data.
+ * Delivery is at-least-once, so consumers must treat doseSlotId as the idempotency key.
  */
 public record DoseDueEvent(
         UUID doseSlotId,
         UUID hospitalId,
         UUID patientId,
-        UUID medicationId,
+        UUID regimenId,
         CareSetting careSetting,
         Instant dueAt,
         Instant windowClosesAt

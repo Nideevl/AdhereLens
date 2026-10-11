@@ -19,6 +19,9 @@
 
     <modules>
         <module>common</module>
+        <module>auth-common</module>
+        <module>identity-service</module>
+        <module>clinical-service</module>
     </modules>
 
     <properties>
