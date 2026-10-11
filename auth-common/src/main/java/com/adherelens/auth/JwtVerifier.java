@@ -26,6 +26,7 @@ public class JwtVerifier {
         return new AuthUser(
                 UUID.fromString(claims.getSubject()),
                 hospital == null ? null : UUID.fromString(hospital),
-                Role.valueOf(claims.get("role", String.class)));
+                Role.valueOf(claims.get("role", String.class)),
+                claims.get("name", String.class));
     }
 }

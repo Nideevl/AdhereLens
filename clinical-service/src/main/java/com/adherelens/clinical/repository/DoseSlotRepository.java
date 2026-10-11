@@ -33,6 +33,13 @@ public interface DoseSlotRepository extends JpaRepository<DoseSlot, UUID> {
     @Query("select s.id from DoseSlot s where s.outcomePublished = false and s.status in :statuses")
     List<UUID> findUnpublishedOutcomeIds(@Param("statuses") Collection<SlotStatus> statuses);
 
+    /** Future PENDING slots were never published or recorded, so deleting them is safe. */
+    @Modifying
+    @Query("delete from DoseSlot s where s.regimenId = :regimenId and s.status = :pending and s.dueAt > :now")
+    int deleteFuturePending(@Param("regimenId") UUID regimenId,
+                            @Param("pending") SlotStatus pending,
+                            @Param("now") Instant now);
+
     @Modifying
     @Query("update DoseSlot s set s.status = :cancelled, s.version = s.version + 1 "
             + "where s.regimenId = :regimenId and s.status = :pending and s.dueAt > :now")

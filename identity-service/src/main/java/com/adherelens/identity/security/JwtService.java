@@ -31,6 +31,7 @@ public class JwtService {
         JwtBuilder builder = Jwts.builder()
                 .subject(staff.getId().toString())
                 .claim("role", staff.getRole().name())
+                .claim("name", staff.getFullName())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(expiryMinutes, ChronoUnit.MINUTES)));
         if (staff.getHospitalId() != null) {

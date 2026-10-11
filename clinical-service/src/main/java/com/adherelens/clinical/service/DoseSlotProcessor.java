@@ -69,8 +69,8 @@ public class DoseSlotProcessor {
         }
         for (LocalTime time : regimen.getDoseTimes()) {
             Instant dueAt = today.atTime(time).atZone(clock.getZone()).toInstant();
-            // A dose time that had already passed when the regimen was prescribed is not a missed dose.
-            if (dueAt.isBefore(regimen.getCreatedAt())) {
+            // A dose time that had already passed when the schedule was set or edited is not a missed dose.
+            if (dueAt.isBefore(regimen.getScheduleEffectiveFrom())) {
                 continue;
             }
             if (slotRepository.existsByRegimenIdAndDueAt(regimen.getId(), dueAt)) {

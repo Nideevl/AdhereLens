@@ -77,6 +77,11 @@ public class Regimen {
     @Column(name = "discontinued_on")
     private LocalDate discontinuedOn;
 
+    // Doses are only generated for times at or after this instant, so editing a dose time to
+    // one that already passed today never creates an instantly-missed dose.
+    @Column(name = "schedule_effective_from", nullable = false)
+    private Instant scheduleEffectiveFrom;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -108,5 +113,7 @@ public class Regimen {
     public void setStatus(RegimenStatus status) { this.status = status; }
     public LocalDate getDiscontinuedOn() { return discontinuedOn; }
     public void setDiscontinuedOn(LocalDate discontinuedOn) { this.discontinuedOn = discontinuedOn; }
+    public Instant getScheduleEffectiveFrom() { return scheduleEffectiveFrom; }
+    public void setScheduleEffectiveFrom(Instant scheduleEffectiveFrom) { this.scheduleEffectiveFrom = scheduleEffectiveFrom; }
     public Instant getCreatedAt() { return createdAt; }
 }

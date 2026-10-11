@@ -1,14 +1,17 @@
 package com.adherelens.clinical.web;
 
 import com.adherelens.auth.AuthUser;
+import com.adherelens.clinical.dto.RegimenChangeResponse;
 import com.adherelens.clinical.dto.RegimenRequest;
 import com.adherelens.clinical.dto.RegimenResponse;
+import com.adherelens.clinical.dto.RegimenUpdateRequest;
 import com.adherelens.clinical.service.RegimenService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,7 +38,7 @@ public class RegimenController {
     public RegimenResponse create(@AuthenticationPrincipal AuthUser caller,
                                   @PathVariable UUID patientId,
                                   @Valid @RequestBody RegimenRequest request) {
-        return regimenService.create(caller.hospitalId(), caller.staffId(), patientId, request);
+        return regimenService.create(caller, patientId, request);
     }
 
     @GetMapping("/patients/{patientId}/regimens")
@@ -51,9 +54,23 @@ public class RegimenController {
         return regimenService.get(caller.hospitalId(), id);
     }
 
+    @PatchMapping("/regimens/{id}")
+    @PreAuthorize("hasAnyRole('NURSE', 'DOCTOR')")
+    public RegimenResponse update(@AuthenticationPrincipal AuthUser caller,
+                                  @PathVariable UUID id,
+                                  @Valid @RequestBody RegimenUpdateRequest request) {
+        return regimenService.update(caller, id, request);
+    }
+
+    @GetMapping("/regimens/{id}/history")
+    @PreAuthorize("hasAnyRole('HOSPITAL_ADMIN', 'DOCTOR', 'NURSE')")
+    public List<RegimenChangeResponse> history(@AuthenticationPrincipal AuthUser caller, @PathVariable UUID id) {
+        return regimenService.history(caller.hospitalId(), id);
+    }
+
     @PostMapping("/regimens/{id}/discontinue")
     @PreAuthorize("hasRole('DOCTOR')")
     public RegimenResponse discontinue(@AuthenticationPrincipal AuthUser caller, @PathVariable UUID id) {
-        return regimenService.discontinue(caller.hospitalId(), id);
+        return regimenService.discontinue(caller, id);
     }
 }
