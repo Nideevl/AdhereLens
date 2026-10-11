@@ -3,6 +3,7 @@ package com.adherelens.clinical.dto;
 import com.adherelens.common.model.CareSetting;
 import com.adherelens.common.model.Gender;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -15,6 +16,7 @@ public record PatientResponse(
         Gender gender,
         CareSetting careSetting,
         String conditionCode,
-        boolean active
+        boolean active,
+        BigDecimal weightKg
 ) {
 }

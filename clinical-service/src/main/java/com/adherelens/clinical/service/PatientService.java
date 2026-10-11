@@ -78,10 +78,11 @@ public class PatientService {
         patient.setGender(r.gender());
         patient.setCareSetting(r.careSetting());
         patient.setConditionCode(r.conditionCode());
+        patient.setWeightKg(r.weightKg());
     }
 
     private PatientResponse toResponse(Patient p) {
         return new PatientResponse(p.getId(), p.getFullName(), p.getPhone(), p.getGuardianPhone(),
-                p.getDateOfBirth(), p.getGender(), p.getCareSetting(), p.getConditionCode(), p.isActive());
+                p.getDateOfBirth(), p.getGender(), p.getCareSetting(), p.getConditionCode(), p.isActive(), p.getWeightKg());
     }
 }

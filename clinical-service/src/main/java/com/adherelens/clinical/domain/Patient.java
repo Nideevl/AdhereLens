@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -51,6 +52,9 @@ public class Patient {
     @Column(name = "condition_code", nullable = false, length = 50)
     private String conditionCode;
 
+    @Column(name = "weight_kg", precision = 5, scale = 2)
+    private BigDecimal weightKg;
+
     @Column(nullable = false)
     private boolean active = true;
 
@@ -75,6 +79,8 @@ public class Patient {
     public void setCareSetting(CareSetting careSetting) { this.careSetting = careSetting; }
     public String getConditionCode() { return conditionCode; }
     public void setConditionCode(String conditionCode) { this.conditionCode = conditionCode; }
+    public BigDecimal getWeightKg() { return weightKg; }
+    public void setWeightKg(BigDecimal weightKg) { this.weightKg = weightKg; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
     public Instant getCreatedAt() { return createdAt; }
