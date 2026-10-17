@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth';
 import Layout from './components/Layout';
 import Alerts from './pages/Alerts';
+import Analytics from './pages/Analytics';
 import DrugRules from './pages/DrugRules';
 import Hospitals from './pages/Hospitals';
 import Login from './pages/Login';
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/patients/:id" element={<Only roles={['HOSPITAL_ADMIN', 'DOCTOR', 'NURSE']}><PatientDetail /></Only>} />
         <Route path="/doses" element={<Only roles={['HOSPITAL_ADMIN', 'DOCTOR', 'NURSE']}><Worklist /></Only>} />
         <Route path="/alerts" element={<Only roles={['DOCTOR', 'NURSE']}><Alerts /></Only>} />
+        <Route path="/analytics" element={<Only roles={['PLATFORM_ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR']}><Analytics /></Only>} />
         <Route path="/drug-rules" element={<Only roles={['HOSPITAL_ADMIN', 'DOCTOR', 'NURSE']}><DrugRules /></Only>} />
       </Route>
       <Route path="*" element={<Navigate to={auth ? HOME[auth.role] : '/login'} replace />} />

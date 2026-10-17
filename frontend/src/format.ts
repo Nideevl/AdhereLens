@@ -30,6 +30,11 @@ export function label(value: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+/** Drug codes read better as words: DEMO_DRUG_B becomes "Demo Drug B". */
+export function drugLabel(value: string): string {
+  return value.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+}
+
 export function todayIso(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: ZONE });
 }

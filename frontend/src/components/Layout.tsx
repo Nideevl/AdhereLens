@@ -4,17 +4,19 @@ import { label } from '../format';
 import type { Role } from '../types';
 
 const NAV: Record<Role, { to: string; text: string }[]> = {
-  PLATFORM_ADMIN: [{ to: '/hospitals', text: 'Hospitals' }],
+  PLATFORM_ADMIN: [{ to: '/hospitals', text: 'Hospitals' }, { to: '/analytics', text: 'Analytics' }],
   HOSPITAL_ADMIN: [
     { to: '/staff', text: 'Staff' },
     { to: '/patients', text: 'Patients' },
     { to: '/doses', text: 'Doses' },
+    { to: '/analytics', text: 'Analytics' },
     { to: '/drug-rules', text: 'Drug rules' },
   ],
   DOCTOR: [
     { to: '/patients', text: 'Patients' },
     { to: '/doses', text: 'Doses' },
     { to: '/alerts', text: 'Alerts' },
+    { to: '/analytics', text: 'Analytics' },
     { to: '/drug-rules', text: 'Drug rules' },
   ],
   NURSE: [

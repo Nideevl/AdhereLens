@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { get, post } from '../api';
 import { useAuth } from '../auth';
 import { ErrorBox, Field, Loading, TimesInput } from '../components/ui';
-import { fmtTime, label, numOrNull, toCode } from '../format';
+import { fmtTime, label, numOrNull, toCode, drugLabel } from '../format';
 import { useLoad } from '../hooks';
 import { DOSE_UNITS, FORMULATIONS, GENDERS, type DoseUnit, type DrugRule, type DrugRuleInput, type Formulation, type Gender } from '../types';
 
@@ -18,7 +18,7 @@ export default function DrugRules() {
   );
 
   async function deactivate(rule: DrugRule) {
-    if (!window.confirm(`Deactivate this rule for ${label(rule.drugName)}?`)) return;
+    if (!window.confirm(`Deactivate this rule for ${drugLabel(rule.drugName)}?`)) return;
     setActionError(null);
     try {
       await post(`/api/drug-rules/${rule.id}/deactivate`);
@@ -53,7 +53,7 @@ export default function DrugRules() {
               <tbody>
                 {data.map((r) => (
                   <tr key={r.id}>
-                    <td>{label(r.drugName)}<div className="muted"><small>{label(r.formulation)}</small></div></td>
+                    <td>{drugLabel(r.drugName)}<div className="muted"><small>{label(r.formulation)}</small></div></td>
                     <td>
                       Age {r.minAgeYears} to {r.maxAgeYears}
                       {r.gender && `, ${label(r.gender).toLowerCase()}`}

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { get, post } from '../api';
 import { useAuth } from '../auth';
 import { ErrorBox, Loading, StatusBadge } from '../components/ui';
-import { fmtDateTime, label } from '../format';
+import { fmtDateTime, label, drugLabel } from '../format';
 import { useLoad } from '../hooks';
 import type { CareSetting, DoseSlot, SlotStatus } from '../types';
 
@@ -74,7 +74,7 @@ export default function Worklist() {
                   return (
                     <tr key={s.id}>
                       <td><Link to={`/patients/${s.patientId}`}>{s.patientName}</Link></td>
-                      <td>{label(s.drugName)}<div className="muted"><small>{s.doseAmount} {s.doseUnit} {label(s.formulation).toLowerCase()}</small></div></td>
+                      <td>{drugLabel(s.drugName)}<div className="muted"><small>{s.doseAmount} {s.doseUnit} {label(s.formulation).toLowerCase()}</small></div></td>
                       <td><StatusBadge status={s.careSetting} /></td>
                       <td>{fmtDateTime(s.dueAt)}</td>
                       <td>

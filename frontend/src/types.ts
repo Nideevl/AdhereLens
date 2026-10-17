@@ -93,3 +93,19 @@ export interface SideEffectReport {
   reportedByName: string | null; reportedByRole: string; reportedAt: string;
   status: 'ACTIVE' | 'RETRACTED'; retractedAt: string | null; retractReason: string | null;
 }
+
+export interface AnalyticsResult<T> { rows: T[]; minGroupSize: number; includesSynthetic: boolean }
+export interface DayPoint { day: number; doses: number; patients: number; takenRate: number | null; onTimeRate: number | null; suppressed: boolean }
+export interface DrugRow { drugName: string; doses: number; patients: number; takenRate: number | null; onTimeRate: number | null; suppressed: boolean }
+export interface SideEffectRow {
+  ageBucket: string; gender: string; sideEffect: string; patientsReporting: number;
+  cohortPatients: number; ratePercent: number | null; suppressed: boolean;
+}
+export interface HospitalRow {
+  label: string; mine: boolean; doseAmount: number; doseUnit: string; doses: number; patients: number;
+  takenRate: number | null; onTimeRate: number | null; suppressed: boolean;
+}
+export interface SummaryRow {
+  careSetting: string; doses: number; patients: number; hit: number; delayed: number; missed: number;
+  refused: number; takenRate: number | null; onTimeRate: number | null; suppressed: boolean;
+}

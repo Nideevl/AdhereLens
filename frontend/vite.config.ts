@@ -11,6 +11,7 @@ export default defineConfig({
     allowedHosts: true, // dev only: lets a Codespaces forwarded address through
     proxy: {
       '^/api/(auth|me|hospitals|staff)': { target: 'http://localhost:8081', changeOrigin: true },
+      '^/api/analytics': { target: 'http://localhost:8084', changeOrigin: true },
       '^/api/alerts': { target: 'http://localhost:8083', changeOrigin: true },
       '/api': { target: 'http://localhost:8082', changeOrigin: true },
     },

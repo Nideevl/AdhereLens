@@ -2,15 +2,15 @@
 # One command to run the whole AdhereLens stack in the background.
 #   ./dev.sh start          start Docker, the 3 services and the frontend (builds first if needed)
 #   ./dev.sh start --build  same, but rebuild the jars first (use after changing backend code)
-#   ./dev.sh stop           stop the 3 services and the frontend (Docker keeps running)
+#   ./dev.sh stop           stop the 4 services and the frontend (Docker keeps running)
 #   ./dev.sh status         show what is up
-#   ./dev.sh logs <name>    follow a log: identity | clinical | notification | frontend
+#   ./dev.sh logs <name>    follow a log: identity | clinical | notification | analytics | frontend
 set -u
 cd "$(dirname "$0")"
 RUN=.run
 mkdir -p "$RUN"
 
-SERVICES="identity:identity-service:8081 clinical:clinical-service:8082 notification:notification-service:8083"
+SERVICES="identity:identity-service:8081 clinical:clinical-service:8082 notification:notification-service:8083 analytics:analytics-service:8084"
 
 port_open() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
 
@@ -61,7 +61,7 @@ case "${1:-}" in
     echo "Starting frontend..."
     if ! port_open 5173; then
       [ -d frontend/node_modules ] || (cd frontend && npm install --no-audit --no-fund)
-      (cd frontend && nohup npm run dev > "../$RUN/frontend.log" 2>&1 & echo $! > "../$RUN/frontend.pid")
+      (cd frontend; nohup npm run dev > "../$RUN/frontend.log" 2>&1 & echo $! > "../$RUN/frontend.pid")
     fi
     wait_port frontend 5173 60
     echo
@@ -81,7 +81,7 @@ case "${1:-}" in
     if port_open 9092; then echo "up    kafka (9092)"; else echo "DOWN  kafka (9092)"; fi
     ;;
   logs)
-    [ -n "${2:-}" ] && [ -f "$RUN/$2.log" ] && tail -n 80 -f "$RUN/$2.log" || echo "Usage: ./dev.sh logs identity|clinical|notification|frontend"
+    [ -n "${2:-}" ] && [ -f "$RUN/$2.log" ] && tail -n 80 -f "$RUN/$2.log" || echo "Usage: ./dev.sh logs identity|clinical|notification|analytics|frontend"
     ;;
   *)
     sed -n '2,8p' "$0"

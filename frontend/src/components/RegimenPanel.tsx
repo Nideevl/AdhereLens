@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { get, patch, post } from '../api';
 import { ErrorBox, Field, Modal, StatusBadge, TimesInput } from './ui';
-import { fmtDate, fmtDateTime, fmtTime, label, numOrNull, textOrNull, toCode, todayIso } from '../format';
+import { fmtDate, fmtDateTime, fmtTime, label, numOrNull, textOrNull, toCode, todayIso, drugLabel } from '../format';
 import { useLoad } from '../hooks';
 import {
   DOSE_UNITS, FORMULATIONS,
@@ -25,7 +25,7 @@ export default function RegimenPanel({ patient, regimens, canPrescribe, canEdit,
   const [actionError, setActionError] = useState<string | null>(null);
 
   async function discontinue(r: Regimen) {
-    if (!window.confirm(`Discontinue ${label(r.drugName)}? Future doses will be cancelled.`)) return;
+    if (!window.confirm(`Discontinue ${drugLabel(r.drugName)}? Future doses will be cancelled.`)) return;
     setActionError(null);
     try {
       await post(`/api/regimens/${r.id}/discontinue`);
@@ -51,7 +51,7 @@ export default function RegimenPanel({ patient, regimens, canPrescribe, canEdit,
       {regimens.map((r) => (
         <div className="reg" key={r.id}>
           <div className="reg-head">
-            <strong>{label(r.drugName)}</strong>
+            <strong>{drugLabel(r.drugName)}</strong>
             <StatusBadge status={r.status} />
           </div>
           <div className="kv">
@@ -209,7 +209,7 @@ function EditModal({ regimen, onClose, onSaved }: { regimen: Regimen; onClose: (
   }
 
   return (
-    <Modal title={`Edit ${label(regimen.drugName)}`} onClose={onClose}>
+    <Modal title={`Edit ${drugLabel(regimen.drugName)}`} onClose={onClose}>
       <form onSubmit={submit}>
         <div className="grid">
           <Field label="Dose amount"><input type="number" step="any" min="0.001" value={amount} onChange={(e) => setAmount(e.target.value)} required /></Field>
@@ -238,7 +238,7 @@ function EditModal({ regimen, onClose, onSaved }: { regimen: Regimen; onClose: (
 function HistoryModal({ regimen, onClose }: { regimen: Regimen; onClose: () => void }) {
   const { data, error, loading } = useLoad(() => get<RegimenChange[]>(`/api/regimens/${regimen.id}/history`), [regimen.id]);
   return (
-    <Modal title={`History: ${label(regimen.drugName)}`} onClose={onClose}>
+    <Modal title={`History: ${drugLabel(regimen.drugName)}`} onClose={onClose}>
       <ErrorBox message={error} />
       {loading && <p className="muted">Loading...</p>}
       {data && (data.length === 0 ? <div className="empty">No changes recorded.</div> : (

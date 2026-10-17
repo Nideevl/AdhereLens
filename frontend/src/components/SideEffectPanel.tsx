@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { get, post } from '../api';
 import { ErrorBox, Field, Modal, StatusBadge } from './ui';
-import { fmtDateTime, label } from '../format';
+import { fmtDateTime, label, drugLabel } from '../format';
 import { useLoad } from '../hooks';
 import type { Patient, Regimen, SideEffectReport } from '../types';
 
@@ -24,7 +24,7 @@ export default function SideEffectPanel({ patient, regimens, canReport, canRetra
 
   const regimenName = (id: string) => {
     const r = regimens.find((x) => x.id === id);
-    return r ? label(r.drugName) : '-';
+    return r ? drugLabel(r.drugName) : '-';
   };
 
   function toggle(code: string) {
@@ -62,7 +62,7 @@ export default function SideEffectPanel({ patient, regimens, canReport, canRetra
         <form className="reg" onSubmit={submit}>
           <Field label="Regimen">
             <select value={regimenId} onChange={(e) => setRegimenId(e.target.value)}>
-              {regimens.map((r) => <option key={r.id} value={r.id}>{label(r.drugName)} ({r.status.toLowerCase()})</option>)}
+              {regimens.map((r) => <option key={r.id} value={r.id}>{drugLabel(r.drugName)} ({r.status.toLowerCase()})</option>)}
             </select>
           </Field>
           <Field label="What was observed" hint="Choose from the fixed list. Use Other only if nothing fits.">
