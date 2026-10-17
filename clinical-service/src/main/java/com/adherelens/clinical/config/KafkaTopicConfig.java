@@ -18,4 +18,9 @@ public class KafkaTopicConfig {
     public NewTopic doseOutcomeTopic() {
         return TopicBuilder.name(Topics.DOSE_OUTCOME).partitions(1).replicas(1).build();
     }
+
+    @Bean
+    public NewTopic sideEffectTopic() {
+        return TopicBuilder.name(Topics.SIDE_EFFECT).partitions(1).replicas(1).build();
+    }
 }

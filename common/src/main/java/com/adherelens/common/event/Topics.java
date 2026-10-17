@@ -7,4 +7,5 @@ public final class Topics {
 
     public static final String DOSE_DUE = "dose-due";
     public static final String DOSE_OUTCOME = "dose-outcome";
+    public static final String SIDE_EFFECT = "side-effect";
 }

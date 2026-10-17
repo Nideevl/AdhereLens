@@ -1,0 +1,35 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: analytics-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/adherelens?currentSchema=analytics
+    username: adherelens
+    password: adherelens
+  flyway:
+    schemas: analytics
+    default-schema: analytics
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: analytics-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+adherelens:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-secret-change-me-before-any-real-use-0123456789}
+  internal:
+    api-key: ${INTERNAL_API_KEY:dev-only-internal-key-change-me}
+  clinical:
+    base-url: ${CLINICAL_BASE_URL:http://localhost:8082}
+  analytics:
+    # Hospital time zone, used to count "day of therapy".
+    zone: Asia/Kolkata
+    # Any group with fewer distinct patients than this is hidden in every result.
+    min-group-size: 5
+    # Keyed-hash secret for patient pseudonyms and blinded hospital labels. Change it for real use.
+    pseudonym-secret: ${PSEUDONYM_SECRET:dev-only-pseudonym-secret-change-me}

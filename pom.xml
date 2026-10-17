@@ -23,6 +23,7 @@
         <module>identity-service</module>
         <module>clinical-service</module>
         <module>notification-service</module>
+        <module>analytics-service</module>
     </modules>
 
     <properties>

@@ -9,9 +9,16 @@ import com.adherelens.clinical.dto.SideEffectResponse;
 import com.adherelens.clinical.repository.PatientRepository;
 import com.adherelens.clinical.repository.RegimenRepository;
 import com.adherelens.clinical.repository.SideEffectReportRepository;
+import com.adherelens.common.event.SideEffectEvent;
+import com.adherelens.common.event.Topics;
 import com.adherelens.common.model.SideEffect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -28,19 +35,24 @@ import java.util.UUID;
 @Service
 public class SideEffectService {
 
+    private static final Logger log = LoggerFactory.getLogger(SideEffectService.class);
+
     private final SideEffectReportRepository reportRepository;
     private final RegimenRepository regimenRepository;
     private final PatientRepository patientRepository;
     private final Clock clock;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public SideEffectService(SideEffectReportRepository reportRepository,
                              RegimenRepository regimenRepository,
                              PatientRepository patientRepository,
-                             Clock clock) {
+                             Clock clock,
+                             KafkaTemplate<String, Object> kafkaTemplate) {
         this.reportRepository = reportRepository;
         this.regimenRepository = regimenRepository;
         this.patientRepository = patientRepository;
         this.clock = clock;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     @Transactional
@@ -63,7 +75,9 @@ public class SideEffectService {
             report.setReportedByName(caller.fullName());
             report.setReportedByRole(caller.role().name());
             report.setReportedAt(now);
-            created.add(toResponse(reportRepository.save(report)));
+            SideEffectReport saved = reportRepository.save(report);
+            publishAfterCommit(saved);
+            created.add(toResponse(saved));
         }
         return created;
     }
@@ -89,7 +103,31 @@ public class SideEffectService {
         report.setRetractedByName(caller.fullName());
         report.setRetractedAt(Instant.now(clock));
         report.setRetractReason(reason.trim());
-        return toResponse(reportRepository.save(report));
+        SideEffectReport saved = reportRepository.save(report);
+        publishAfterCommit(saved);
+        return toResponse(saved);
+    }
+
+    /**
+     * Sends the event only once the database transaction has committed, so analytics never hears
+     * about a report that was rolled back. If the app crashes between the commit and the send,
+     * that one event is lost.
+     */
+    private void publishAfterCommit(SideEffectReport report) {
+        SideEffectEvent event = new SideEffectEvent(report.getId(), report.getHospitalId(), report.getPatientId(),
+                report.getRegimenId(), report.getSideEffect(), report.getStatus() == SideEffectStatus.RETRACTED,
+                report.getReportedAt());
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                kafkaTemplate.send(Topics.SIDE_EFFECT, report.getPatientId().toString(), event)
+                        .whenComplete((result, error) -> {
+                            if (error != null) {
+                                log.error("Publishing side effect {} failed", report.getId(), error);
+                            }
+                        });
+            }
+        });
     }
 
     private SideEffectResponse toResponse(SideEffectReport r) {
