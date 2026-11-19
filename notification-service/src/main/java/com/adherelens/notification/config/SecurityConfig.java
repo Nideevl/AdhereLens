@@ -31,7 +31,7 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // First matching rule wins. "/error" must be open or a 403 shows up as 401.
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/error", "/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/alerts/**").hasAnyRole("NURSE", "DOCTOR")
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))

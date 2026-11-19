@@ -31,7 +31,7 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // First matching rule wins. "/error" must be open or a 403 shows up as 401.
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/error", "/actuator/health", "/actuator/health/**").permitAll()
                         // Own hospital's numbers.
                         .requestMatchers(HttpMethod.GET, "/api/analytics/hospital/**").hasAnyRole("HOSPITAL_ADMIN", "DOCTOR")
                         // All hospitals together, with hospital names hidden.

@@ -31,7 +31,7 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // First matching rule wins, so the specific rules come before the general ones.
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/error", "/actuator/health", "/actuator/health/**").permitAll()
                         // Service-to-service: guarded by the X-Internal-Key check in the controller.
                         .requestMatchers("/internal/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/regimens/*/side-effects").hasAnyRole("NURSE", "DOCTOR")
