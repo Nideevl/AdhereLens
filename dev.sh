@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # One command to run the whole AdhereLens stack in the background.
-#   ./dev.sh start          start Docker, the 3 services and the frontend (builds first if needed)
+#   ./dev.sh start          start Docker, the 4 services and the frontend (builds first if needed)
+#                           creates .env with random secrets on first run
 #   ./dev.sh start --build  same, but rebuild the jars first (use after changing backend code)
 #   ./dev.sh stop           stop the 4 services and the frontend (Docker keeps running)
 #   ./dev.sh status         show what is up
@@ -22,6 +23,26 @@ wait_port() { # name port seconds
     sleep 1
   done
   echo "  $1: up on port $2"
+}
+
+ensure_env() {
+  if [ ! -f .env ]; then
+    command -v openssl >/dev/null || { echo "openssl is needed to generate secrets, or copy .env.example to .env and fill it in"; exit 1; }
+    {
+      echo "DB_USER=adherelens"
+      echo "DB_PASSWORD=$(openssl rand -hex 16)"
+      echo "JWT_SECRET=$(openssl rand -hex 32)"
+      echo "INTERNAL_API_KEY=$(openssl rand -hex 24)"
+      echo "PSEUDONYM_SECRET=$(openssl rand -hex 32)"
+      echo "BOOTSTRAP_ADMIN_EMAIL=admin@adherelens.local"
+      echo "BOOTSTRAP_ADMIN_PASSWORD=$(openssl rand -hex 9)Aa1!"
+    } > .env
+    chmod 600 .env
+    echo "Created .env with random secrets (git-ignored). Platform admin login is in that file."
+    echo "If you ran this project before, the Postgres volume still has the old password:"
+    echo "  either run 'docker compose down -v' (deletes local data) or set DB_PASSWORD=adherelens in .env."
+  fi
+  set -a; . ./.env; set +a
 }
 
 jar_of() { ls "$1"/target/*-SNAPSHOT.jar 2>/dev/null | head -n 1; }
@@ -50,6 +71,7 @@ stop_one() { # name
 
 case "${1:-}" in
   start)
+    ensure_env
     if [ "${2:-}" = "--build" ] || [ -z "$(jar_of clinical-service)" ]; then build; fi
     echo "Starting Docker (Postgres, Kafka)..."
     docker compose up -d || { echo "Docker failed"; exit 1; }
