@@ -93,7 +93,10 @@ public class NotificationService {
         if (!outcomeRepository.existsById(event.doseSlotId())) {
             outcomeRepository.save(new SlotOutcome(event.doseSlotId(), event.status().name(), Instant.now(clock)));
         }
-        reminderRepository.changeStatus(event.doseSlotId(), ReminderStatus.PENDING, ReminderStatus.CANCELLED);
+        // SENDING too: a message already in flight is left to finish, but its result must not
+        // overwrite CANCELLED or schedule a retry after the dose has an outcome.
+        reminderRepository.changeStatusOfOpen(event.doseSlotId(),
+                List.of(ReminderStatus.PENDING, ReminderStatus.SENDING), ReminderStatus.CANCELLED);
         alertRepository.findByDoseSlotId(event.doseSlotId()).ifPresent(alert -> {
             if (alert.getResolvedAt() == null) {
                 alert.resolve(event.status().name(), Instant.now(clock));

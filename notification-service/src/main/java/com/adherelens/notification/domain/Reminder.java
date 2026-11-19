@@ -51,6 +51,19 @@ public class Reminder {
     @Column(name = "sent_at")
     private Instant sentAt;
 
+    @Column(name = "send_tries", nullable = false)
+    private int sendTries;
+
+    @Column(name = "next_attempt_at", nullable = false)
+    private Instant nextAttemptAt;
+
+    @Column(name = "claimed_at")
+    private Instant claimedAt;
+
+    // Exception class name only. Never a message: those can contain phone numbers.
+    @Column(name = "last_error", length = 200)
+    private String lastError;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -67,19 +80,42 @@ public class Reminder {
         this.channel = channel;
         this.scheduledFor = scheduledFor;
         this.windowClosesAt = windowClosesAt;
+        this.nextAttemptAt = scheduledFor;
+    }
+
+    /** An instance has claimed this reminder and is about to send it. */
+    public void markSending(Instant at) {
+        this.status = ReminderStatus.SENDING;
+        this.claimedAt = at;
     }
 
     public void markSent(Instant at) {
         this.status = ReminderStatus.SENT;
         this.sentAt = at;
+        this.claimedAt = null;
+        this.lastError = null;
     }
 
-    public void markFailed() {
+    /** The send failed but there is time left: back to PENDING, to be tried again at nextAttemptAt. */
+    public void scheduleRetry(Instant nextAttemptAt, String error) {
+        this.sendTries++;
+        this.status = ReminderStatus.PENDING;
+        this.nextAttemptAt = nextAttemptAt;
+        this.claimedAt = null;
+        this.lastError = error;
+    }
+
+    /** The send failed and no more tries are allowed. */
+    public void markFailed(String error) {
+        this.sendTries++;
         this.status = ReminderStatus.FAILED;
+        this.claimedAt = null;
+        this.lastError = error;
     }
 
     public void markCancelled() {
         this.status = ReminderStatus.CANCELLED;
+        this.claimedAt = null;
     }
 
     public UUID getId() { return id; }
@@ -92,5 +128,9 @@ public class Reminder {
     public Instant getWindowClosesAt() { return windowClosesAt; }
     public ReminderStatus getStatus() { return status; }
     public Instant getSentAt() { return sentAt; }
+    public int getSendTries() { return sendTries; }
+    public Instant getNextAttemptAt() { return nextAttemptAt; }
+    public Instant getClaimedAt() { return claimedAt; }
+    public String getLastError() { return lastError; }
     public Instant getCreatedAt() { return createdAt; }
 }
