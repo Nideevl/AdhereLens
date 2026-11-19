@@ -6,8 +6,8 @@ spring:
     name: identity-service
   datasource:
     url: jdbc:postgresql://localhost:5432/adherelens
-    username: adherelens
-    password: adherelens
+    username: ${DB_USER:adherelens}
+    password: ${DB_PASSWORD}
   jpa:
     open-in-view: false
     hibernate:
@@ -21,8 +21,17 @@ spring:
 
 adherelens:
   jwt:
-    secret: ${JWT_SECRET:dev-only-secret-change-me-before-any-real-use-0123456789}
+    secret: ${JWT_SECRET}
     expiry-minutes: 480
   bootstrap:
     admin-email: ${BOOTSTRAP_ADMIN_EMAIL:admin@adherelens.local}
-    admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:ChangeMe123!}
+    admin-password: ${BOOTSTRAP_ADMIN_PASSWORD}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never

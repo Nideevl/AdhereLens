@@ -6,8 +6,8 @@ spring:
     name: analytics-service
   datasource:
     url: jdbc:postgresql://localhost:5432/adherelens?currentSchema=analytics
-    username: adherelens
-    password: adherelens
+    username: ${DB_USER:adherelens}
+    password: ${DB_PASSWORD}
   flyway:
     schemas: analytics
     default-schema: analytics
@@ -21,9 +21,9 @@ spring:
 
 adherelens:
   jwt:
-    secret: ${JWT_SECRET:dev-only-secret-change-me-before-any-real-use-0123456789}
+    secret: ${JWT_SECRET}
   internal:
-    api-key: ${INTERNAL_API_KEY:dev-only-internal-key-change-me}
+    api-key: ${INTERNAL_API_KEY}
   clinical:
     base-url: ${CLINICAL_BASE_URL:http://localhost:8082}
   analytics:
@@ -31,5 +31,14 @@ adherelens:
     zone: Asia/Kolkata
     # Any group with fewer distinct patients than this is hidden in every result.
     min-group-size: 5
-    # Keyed-hash secret for patient pseudonyms and blinded hospital labels. Change it for real use.
-    pseudonym-secret: ${PSEUDONYM_SECRET:dev-only-pseudonym-secret-change-me}
+    # Keyed-hash secret for patient pseudonyms and blinded hospital labels. Required: set it in .env (see .env.example).
+    pseudonym-secret: ${PSEUDONYM_SECRET}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never

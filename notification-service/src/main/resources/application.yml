@@ -6,8 +6,8 @@ spring:
     name: notification-service
   datasource:
     url: jdbc:postgresql://localhost:5432/adherelens
-    username: adherelens
-    password: adherelens
+    username: ${DB_USER:adherelens}
+    password: ${DB_PASSWORD}
   jpa:
     open-in-view: false
     hibernate:
@@ -29,16 +29,22 @@ spring:
 
 adherelens:
   jwt:
-    secret: ${JWT_SECRET:dev-only-secret-change-me-before-any-real-use-0123456789}
+    secret: ${JWT_SECRET}
   internal:
     # Shared key for calling clinical-service's /internal endpoints. Must match its api-key.
-    api-key: ${INTERNAL_API_KEY:dev-only-internal-key-change-me}
+    api-key: ${INTERNAL_API_KEY}
   clinical:
     base-url: ${CLINICAL_BASE_URL:http://localhost:8082}
   notification:
     # Outpatient reminders as "minutes after due time:channel". Only attempts that fall before
     # the window closes are created, so the follow-ups are always bounded.
     outpatient-schedule: "0:SMS,15:SMS,30:CALL"
+    retry:
+      # A failed send is retried with backoff (30s, 60s, ...) until max-tries or the dose window closes.
+      max-tries: 3
+      base-delay-seconds: 30
+      # A reminder claimed for longer than this is assumed lost with a crashed instance and is released.
+      claim-lease-seconds: 120
   twilio:
     # false = log only, nothing is sent. true = real texts and calls through Twilio.
     enabled: false
@@ -48,3 +54,12 @@ adherelens:
     # Added to numbers stored without a leading +.
     default-country-code: ${TWILIO_DEFAULT_COUNTRY_CODE:+91}
     base-url: https://api.twilio.com
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never

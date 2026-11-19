@@ -6,8 +6,8 @@ spring:
     name: clinical-service
   datasource:
     url: jdbc:postgresql://localhost:5432/adherelens
-    username: adherelens
-    password: adherelens
+    username: ${DB_USER:adherelens}
+    password: ${DB_PASSWORD}
   jpa:
     open-in-view: false
     hibernate:
@@ -29,7 +29,7 @@ spring:
 
 adherelens:
   jwt:
-    secret: ${JWT_SECRET:dev-only-secret-change-me-before-any-real-use-0123456789}
+    secret: ${JWT_SECRET}
   dose:
     # Hospital time zone used to turn "08:00" dose times into exact instants.
     zone: Asia/Kolkata
@@ -37,4 +37,13 @@ adherelens:
     on-time-minutes: 15
   internal:
     # Shared key for service-to-service calls (notification-service reads patient contacts).
-    api-key: ${INTERNAL_API_KEY:dev-only-internal-key-change-me}
+    api-key: ${INTERNAL_API_KEY}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
