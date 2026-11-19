@@ -16,7 +16,8 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
- * Runs every 30 seconds. Assumes a single running instance of clinical-service.
+ * Runs every 30 seconds. Safe with several running instances: each step locks the row it works
+ * on with FOR UPDATE SKIP LOCKED (see DoseSlotProcessor), and (regimen_id, due_at) is unique.
  * Kafka delivery is at-least-once: if a publish succeeds but the database update fails,
  * the event is sent again on the next tick.
  */

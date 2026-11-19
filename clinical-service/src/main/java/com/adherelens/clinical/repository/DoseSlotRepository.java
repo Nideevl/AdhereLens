@@ -3,9 +3,13 @@ package com.adherelens.clinical.repository;
 import com.adherelens.clinical.domain.DoseSlot;
 import com.adherelens.clinical.domain.SlotStatus;
 import org.springframework.data.domain.Pageable;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.QueryHint;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
@@ -19,6 +23,16 @@ public interface DoseSlotRepository extends JpaRepository<DoseSlot, UUID> {
     boolean existsByRegimenIdAndDueAt(UUID regimenId, Instant dueAt);
 
     Optional<DoseSlot> findByIdAndHospitalId(UUID id, UUID hospitalId);
+
+    /**
+     * SELECT ... FOR UPDATE SKIP LOCKED. Returns empty if another instance already holds this row,
+     * so two clinical-service instances never process the same slot. Must run inside a transaction;
+     * the lock is released on commit or rollback. Timeout -2 is Hibernate's SKIP_LOCKED.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
+    @Query("select s from DoseSlot s where s.id = :id")
+    Optional<DoseSlot> findByIdForUpdateSkipLocked(@Param("id") UUID id);
 
     List<DoseSlot> findByHospitalIdAndStatusAndDueAtLessThanEqualOrderByDueAt(
             UUID hospitalId, SlotStatus status, Instant now, Pageable pageable);

@@ -12,6 +12,8 @@ import com.adherelens.common.event.DoseDueEvent;
 import com.adherelens.common.event.DoseOutcomeEvent;
 import com.adherelens.common.event.Topics;
 import com.adherelens.common.model.DoseStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,11 +29,15 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Each public method handles ONE regimen or slot in its own transaction, so one failure never
- * blocks the others. It is a separate bean from DoseScheduler on purpose: @Transactional works
+ * blocks the others. Each one first takes the row with FOR UPDATE SKIP LOCKED: a row another
+ * instance is working on is skipped, and a row it already finished is re-checked after the lock
+ * is acquired, so the work happens once per row even with several instances running. It is a separate bean from DoseScheduler on purpose: @Transactional works
  * through a proxy, and a method calling another method on the same object skips the proxy.
  */
 @Service
 public class DoseSlotProcessor {
+
+    private static final Logger log = LoggerFactory.getLogger(DoseSlotProcessor.class);
 
     private final DoseSlotRepository slotRepository;
     private final RegimenRepository regimenRepository;
@@ -51,10 +57,16 @@ public class DoseSlotProcessor {
         this.clock = clock;
     }
 
-    /** Creates today's slots for one regimen. Safe to call repeatedly. */
+    /**
+     * Creates today's slots for one regimen. Safe to call repeatedly.
+     * A slot is created only while its window is still open. If the scheduler was down and the window
+     * has already closed, nobody could have recorded that dose, so it is left out instead of being
+     * created and immediately counted as MISSED (that would blame patients for an outage).
+     */
     @Transactional
     public void createSlotsIfMissing(UUID regimenId) {
-        Regimen regimen = regimenRepository.findById(regimenId).orElse(null);
+        // Locked row: if another instance is generating this regimen's slots, skip it.
+        Regimen regimen = regimenRepository.findByIdForUpdateSkipLocked(regimenId).orElse(null);
         if (regimen == null || regimen.getStatus() != RegimenStatus.ACTIVE) {
             return;
         }
@@ -67,10 +79,17 @@ public class DoseSlotProcessor {
                 || (regimen.getEndDate() != null && today.isAfter(regimen.getEndDate()))) {
             return;
         }
+        Instant now = Instant.now(clock);
         for (LocalTime time : regimen.getDoseTimes()) {
             Instant dueAt = today.atTime(time).atZone(clock.getZone()).toInstant();
             // A dose time that had already passed when the schedule was set or edited is not a missed dose.
             if (dueAt.isBefore(regimen.getScheduleEffectiveFrom())) {
+                continue;
+            }
+            Instant windowClosesAt = dueAt.plusSeconds(regimen.getGraceWindowMinutes() * 60L);
+            if (!windowClosesAt.isAfter(now)) {
+                log.debug("Regimen {}: no slot for {} (window closed before it could be created)",
+                        regimen.getId(), dueAt);
                 continue;
             }
             if (slotRepository.existsByRegimenIdAndDueAt(regimen.getId(), dueAt)) {
@@ -82,7 +101,7 @@ public class DoseSlotProcessor {
             slot.setRegimenId(regimen.getId());
             slot.setCareSetting(patient.getCareSetting());
             slot.setDueAt(dueAt);
-            slot.setWindowClosesAt(dueAt.plusSeconds(regimen.getGraceWindowMinutes() * 60L));
+            slot.setWindowClosesAt(windowClosesAt);
             slot.setStatus(SlotStatus.PENDING);
             slotRepository.save(slot);
         }
@@ -90,7 +109,7 @@ public class DoseSlotProcessor {
 
     @Transactional
     public void publishDue(UUID slotId) {
-        DoseSlot slot = slotRepository.findById(slotId).orElse(null);
+        DoseSlot slot = slotRepository.findByIdForUpdateSkipLocked(slotId).orElse(null);
         if (slot == null || slot.isDueEventPublished() || slot.getStatus() == SlotStatus.CANCELLED) {
             return;
         }
@@ -104,7 +123,7 @@ public class DoseSlotProcessor {
     /** Turns a PENDING slot into MISSED once its window has closed with no response. */
     @Transactional
     public void markMissedIfExpired(UUID slotId) {
-        DoseSlot slot = slotRepository.findById(slotId).orElse(null);
+        DoseSlot slot = slotRepository.findByIdForUpdateSkipLocked(slotId).orElse(null);
         if (slot == null || slot.getStatus() != SlotStatus.PENDING
                 || slot.getWindowClosesAt().isAfter(Instant.now(clock))) {
             return;
@@ -115,7 +134,7 @@ public class DoseSlotProcessor {
 
     @Transactional
     public void publishOutcome(UUID slotId) {
-        DoseSlot slot = slotRepository.findById(slotId).orElse(null);
+        DoseSlot slot = slotRepository.findByIdForUpdateSkipLocked(slotId).orElse(null);
         if (slot == null || slot.isOutcomePublished()) {
             return;
         }
