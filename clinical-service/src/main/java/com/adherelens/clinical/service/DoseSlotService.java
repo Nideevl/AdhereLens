@@ -63,6 +63,22 @@ public class DoseSlotService {
     public DoseSlotResponse record(AuthUser caller, UUID slotId, RecordOutcome outcome) {
         DoseSlot slot = slotRepository.findByIdAndHospitalId(slotId, caller.hospitalId())
                 .orElseThrow(() -> new NotFoundException("Dose not found"));
+        return toResponses(List.of(applyOutcome(slot, outcome, caller.staffId(), caller.role().name()))).get(0);
+    }
+
+    /**
+     * An outpatient confirms their own dose through a signed link. The caller has already verified
+     * the token. Same timing rules as a nurse, but recorded_by stays empty and the role is PATIENT.
+     */
+    @Transactional
+    public void recordByPatient(UUID slotId, RecordOutcome outcome) {
+        DoseSlot slot = slotRepository.findById(slotId)
+                .filter(s -> s.getCareSetting() == CareSetting.OUTPATIENT)
+                .orElseThrow(() -> new NotFoundException("Dose not found"));
+        applyOutcome(slot, outcome, null, "PATIENT");
+    }
+
+    private DoseSlot applyOutcome(DoseSlot slot, RecordOutcome outcome, UUID recordedBy, String reportedByRole) {
         if (slot.getStatus() != SlotStatus.PENDING) {
             throw new IllegalArgumentException("This dose already has an outcome");
         }
@@ -84,9 +100,9 @@ public class DoseSlotService {
         }
         slot.setStatus(status);
         slot.setRespondedAt(now);
-        slot.setRecordedBy(caller.staffId());
-        slot.setReportedByRole(caller.role().name());
-        return toResponses(List.of(slotRepository.save(slot))).get(0);
+        slot.setRecordedBy(recordedBy);
+        slot.setReportedByRole(reportedByRole);
+        return slotRepository.save(slot);
     }
 
     private List<DoseSlotResponse> toResponses(List<DoseSlot> slots) {

@@ -1,7 +1,9 @@
 package com.adherelens.clinical.web;
 
 import com.adherelens.clinical.dto.ContactResponse;
+import com.adherelens.clinical.dto.DoseLinkResponse;
 import com.adherelens.clinical.service.ContactService;
+import com.adherelens.clinical.service.PatientDoseService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,11 +27,14 @@ import java.util.UUID;
 public class InternalContactController {
 
     private final ContactService contactService;
+    private final PatientDoseService patientDoseService;
     private final byte[] internalKey;
 
     public InternalContactController(ContactService contactService,
+                                     PatientDoseService patientDoseService,
                                      @Value("${adherelens.internal.api-key}") String internalKey) {
         this.contactService = contactService;
+        this.patientDoseService = patientDoseService;
         this.internalKey = internalKey.getBytes(StandardCharsets.UTF_8);
     }
 
@@ -42,6 +47,18 @@ public class InternalContactController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         return ResponseEntity.ok(contactService.contact(hospitalId, patientId));
+    }
+
+    /** Signed one-time link token for an open outpatient dose. 404 for inpatients or closed doses. */
+    @GetMapping("/dose-slots/{doseSlotId}/link-token")
+    public ResponseEntity<DoseLinkResponse> linkToken(
+            @RequestHeader(value = "X-Internal-Key", required = false) String providedKey,
+            @PathVariable UUID doseSlotId,
+            @RequestParam UUID hospitalId) {
+        if (!keyMatches(providedKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(new DoseLinkResponse(patientDoseService.issueToken(hospitalId, doseSlotId)));
     }
 
     private boolean keyMatches(String provided) {

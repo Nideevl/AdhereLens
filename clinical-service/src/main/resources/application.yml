@@ -38,6 +38,9 @@ adherelens:
   internal:
     # Shared key for service-to-service calls (notification-service reads patient contacts).
     api-key: ${INTERNAL_API_KEY}
+  dose-link:
+    # Signs the one-time dose links sent to outpatients. At least 32 characters, separate from JWT_SECRET.
+    secret: ${DOSE_LINK_SECRET}
 
 management:
   endpoints:

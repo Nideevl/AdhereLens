@@ -34,6 +34,8 @@ public class SecurityConfig {
                         .requestMatchers("/error", "/actuator/health", "/actuator/health/**").permitAll()
                         // Service-to-service: guarded by the X-Internal-Key check in the controller.
                         .requestMatchers("/internal/**").permitAll()
+                        // Outpatient dose link: no login, guarded by the signed token in the path.
+                        .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/regimens/*/side-effects").hasAnyRole("NURSE", "DOCTOR")
                         .requestMatchers(HttpMethod.GET, "/api/side-effects/**").hasAnyRole("HOSPITAL_ADMIN", "DOCTOR", "NURSE")
                         .requestMatchers(HttpMethod.POST, "/api/side-effects/**").hasRole("DOCTOR")

@@ -1,6 +1,8 @@
 package com.adherelens.clinical.web;
 
 import com.adherelens.clinical.domain.DoseSlot;
+import com.adherelens.clinical.service.ExpiredDoseLinkException;
+import com.adherelens.clinical.service.InvalidDoseLinkException;
 import com.adherelens.clinical.service.NotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -36,5 +38,19 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).containsEntry("error", "This dose is not due yet");
+    }
+
+    @Test
+    void invalidDoseLink_mapsTo404() {
+        var response = handler.invalidLink(new InvalidDoseLinkException());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void expiredDoseLink_mapsTo410() {
+        var response = handler.expiredLink(new ExpiredDoseLinkException());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.GONE);
     }
 }

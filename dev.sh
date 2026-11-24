@@ -34,6 +34,7 @@ ensure_env() {
       echo "JWT_SECRET=$(openssl rand -hex 32)"
       echo "INTERNAL_API_KEY=$(openssl rand -hex 24)"
       echo "PSEUDONYM_SECRET=$(openssl rand -hex 32)"
+      echo "DOSE_LINK_SECRET=$(openssl rand -hex 32)"
       echo "BOOTSTRAP_ADMIN_EMAIL=admin@adherelens.local"
       echo "BOOTSTRAP_ADMIN_PASSWORD=$(openssl rand -hex 9)Aa1!"
     } > .env
@@ -41,6 +42,11 @@ ensure_env() {
     echo "Created .env with random secrets (git-ignored). Platform admin login is in that file."
     echo "If you ran this project before, the Postgres volume still has the old password:"
     echo "  either run 'docker compose down -v' (deletes local data) or set DB_PASSWORD=adherelens in .env."
+  fi
+  if ! grep -q '^DOSE_LINK_SECRET=' .env; then
+    command -v openssl >/dev/null || { echo "openssl is needed to generate DOSE_LINK_SECRET, or add it to .env yourself"; exit 1; }
+    echo "DOSE_LINK_SECRET=$(openssl rand -hex 32)" >> .env
+    echo "Added DOSE_LINK_SECRET to .env."
   fi
   set -a; . ./.env; set +a
 }

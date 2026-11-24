@@ -1,5 +1,7 @@
 package com.adherelens.clinical.web;
 
+import com.adherelens.clinical.service.ExpiredDoseLinkException;
+import com.adherelens.clinical.service.InvalidDoseLinkException;
 import com.adherelens.clinical.service.NotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<Map<String, String>> notFound(NotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidDoseLinkException.class)
+    public ResponseEntity<Map<String, String>> invalidLink(InvalidDoseLinkException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler(ExpiredDoseLinkException.class)
+    public ResponseEntity<Map<String, String>> expiredLink(ExpiredDoseLinkException e) {
+        return ResponseEntity.status(HttpStatus.GONE).body(Map.of("error", e.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

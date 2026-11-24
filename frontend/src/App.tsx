@@ -8,6 +8,7 @@ import DrugRules from './pages/DrugRules';
 import Hospitals from './pages/Hospitals';
 import Login from './pages/Login';
 import PatientDetail from './pages/PatientDetail';
+import PatientDose from './pages/PatientDose';
 import Patients from './pages/Patients';
 import Staff from './pages/Staff';
 import Worklist from './pages/Worklist';
@@ -33,6 +34,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={auth ? <Navigate to={HOME[auth.role]} replace /> : <Login />} />
+      {/* Outpatient dose link from the SMS: public, no login. */}
+      <Route path="/d/:token" element={<PatientDose />} />
       <Route element={auth ? <Layout /> : <Navigate to="/login" replace />}>
         <Route path="/hospitals" element={<Only roles={['PLATFORM_ADMIN']}><Hospitals /></Only>} />
         <Route path="/staff" element={<Only roles={['HOSPITAL_ADMIN']}><Staff /></Only>} />

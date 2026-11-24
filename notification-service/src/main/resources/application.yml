@@ -36,6 +36,8 @@ adherelens:
   clinical:
     base-url: ${CLINICAL_BASE_URL:http://localhost:8082}
   notification:
+    # Base address patients open from the SMS link. Must be reachable from their phone.
+    public-base-url: ${PUBLIC_BASE_URL:http://localhost:5173}
     # Outpatient reminders as "minutes after due time:channel". Only attempts that fall before
     # the window closes are created, so the follow-ups are always bounded.
     outpatient-schedule: "0:SMS,15:SMS,30:CALL"

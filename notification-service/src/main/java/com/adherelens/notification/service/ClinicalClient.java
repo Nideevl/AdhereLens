@@ -1,6 +1,7 @@
 package com.adherelens.notification.service;
 
 import com.adherelens.notification.dto.ContactResponse;
+import com.adherelens.notification.dto.DoseLinkResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -35,5 +36,18 @@ public class ClinicalClient {
             throw new IllegalStateException("No phone number on file");
         }
         return contact.phone();
+    }
+
+    /** Signed one-time link token for this dose. Throws if the dose is not an open outpatient dose. */
+    public String doseLinkToken(UUID hospitalId, UUID doseSlotId) {
+        DoseLinkResponse link = client.get()
+                .uri("/internal/dose-slots/{doseSlotId}/link-token?hospitalId={hospitalId}", doseSlotId, hospitalId)
+                .header("X-Internal-Key", internalKey)
+                .retrieve()
+                .body(DoseLinkResponse.class);
+        if (link == null || link.token() == null || link.token().isBlank()) {
+            throw new IllegalStateException("No link token returned");
+        }
+        return link.token();
     }
 }

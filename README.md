@@ -10,8 +10,8 @@ Built with Java 21, Spring Boot 3.2, PostgreSQL 16, Apache Kafka and a React + T
 
 1. A hospital admin registers staff and patients. A doctor prescribes a **regimen** (drug, dose, daily times, grace window).
 2. Every day a scheduler turns each regimen into **dose slots** and publishes a `dose-due` event.
-3. **Inpatients:** an alert appears for the nurses. **Outpatients:** the patient gets up to three bounded SMS or call reminders (for example at due time, +15 min, +30 min), never outside the dose window.
-4. A nurse or doctor records the dose as given or refused. If nobody records it before the window closes, the system marks it **MISSED**.
+3. **Inpatients:** an alert appears for the nurses. **Outpatients:** the patient gets up to three bounded SMS or call reminders (for example at due time, +15 min, +30 min), never outside the dose window. Each SMS carries a signed one-time link for that exact dose (see below).
+4. A nurse or doctor records the dose as given or refused. An outpatient can also confirm it from the SMS link. If nobody records it before the window closes, the system marks it **MISSED**.
 5. Each final outcome is published as a `dose-outcome` event. The analytics service de-identifies it and stores it for reporting.
 
 Roles: `PLATFORM_ADMIN`, `HOSPITAL_ADMIN`, `DOCTOR`, `NURSE`. A hospital only ever sees its own data.
@@ -66,6 +66,18 @@ stateDiagram-v2
 - A slot is created only while its window is still open. After an outage, doses whose window already passed are left out rather than counted as MISSED, so downtime is not blamed on patients.
 - `taken rate = (HIT + DELAYED) / final doses`, `on-time rate = HIT / final doses`.
 
+## Outpatient confirmation by signed link
+
+Each outpatient SMS ends with a link such as `https://<host>/d/<token>`. The page needs no login: the patient sees the drug and the dose window and taps **I took it** or **I did not take it**.
+
+- **Token:** `{doseSlotId}.{expiryEpochSeconds}.{HMAC-SHA256}`. It is stateless, tied to one dose slot, and expires when that slot's window closes. The signing key (`DOSE_LINK_SECRET`) is separate from the JWT secret and lives only in `clinical-service`.
+- **One dose, not a guess:** two medicines due at 08:00 get two different links, so the system never has to work out which one a reply meant.
+- **Same rules as a nurse:** the link calls the same recording code, so the HIT/DELAYED boundaries, the window check and the `@Version` conflict check all apply. The slot stores `reported_by_role = PATIENT` and no staff id.
+- **Single use:** the slot rejects a second outcome, so a reused link only shows the result.
+- **Outpatient only:** inpatient doses and doses that already have an outcome never get a link, and a valid token for an inpatient slot is refused.
+- **Delivery is still SMS through the gateway,** so no inbound webhook is needed. If the link cannot be fetched at send time, the plain reminder goes out without it. Call reminders cannot carry a link.
+- **Responses:** forged or malformed token gives 404, expired gives 410, and the page shows no patient name.
+
 ## Reliability: what is guaranteed and how
 
 | Problem | Approach |
@@ -87,6 +99,7 @@ stateDiagram-v2
 - **De-identification in analytics:** patient ids become keyed hashes (HMAC-SHA256), age becomes a 10-year bucket, drugs and conditions are coded values, and any group with fewer than 5 distinct patients is suppressed in every result.
 - **Auth:** stateless JWT. `hospitalId` always comes from the verified token, never from the request, and every repository query filters by it. URL rules and `@PreAuthorize` apply together.
 - **Internal endpoints** use a shared key compared in constant time.
+- **Dose links:** anyone holding a link can answer for that one dose until its window closes, so treat the SMS like the patient's own phone. The public endpoint has no rate limiting yet.
 - **Secrets** come from environment variables only. The services refuse to start without them. See `.env.example`.
 
 This is privacy-by-design, not a legal compliance claim. It has not been reviewed for HIPAA, DPDP or similar rules.
@@ -116,6 +129,8 @@ mvn -q install -DskipTests          # once, so the shared modules are available
 mvn -pl clinical-service spring-boot:run
 ```
 
+The dose link in each SMS points at `PUBLIC_BASE_URL` (default `http://localhost:5173`). Set it to an address the patient's phone can reach, for example the forwarded Codespaces URL when you test with a real phone. `dev.sh` adds `DOSE_LINK_SECRET` to an existing `.env` if it is missing.
+
 SMS and calls are log-only by default. To use Twilio set the `TWILIO_*` variables in `.env` and `adherelens.twilio.enabled=true` in `notification-service`.
 
 ## Tests
@@ -124,7 +139,7 @@ SMS and calls are log-only by default. To use Twilio set the `TWILIO_*` variable
 mvn test
 ```
 
-JUnit 5 and Mockito unit tests cover the dose recording rules (including the HIT/DELAYED time boundaries), slot creation, the scheduler steps, the skip-if-locked behaviour, event publishing, missed-dose detection, and the reminder claim, retry and backoff logic. They mock the database, so row locking itself was checked by hand with two running instances, not by an automated test.
+JUnit 5 and Mockito unit tests cover the dose recording rules (including the HIT/DELAYED time boundaries), slot creation, the scheduler steps, the skip-if-locked behaviour, event publishing, missed-dose detection, the reminder claim, retry and backoff logic, and the signed dose link (signature, tampering, expiry, outpatient-only, patient confirmation). They mock the database, so row locking itself was checked by hand with two running instances, not by an automated test.
 
 ## Project layout
 
@@ -142,7 +157,9 @@ dev.sh                 one-command local run
 
 ## Known limitations
 
-- Reminders are one-way. A patient cannot confirm a dose by replying. Only a nurse or doctor records outcomes. Patient-side confirmation is the main gap.
+- Patient confirmation needs a smartphone with internet. There is no reply-by-SMS fallback for basic phones, and call reminders cannot carry a link.
+- The public link endpoint has no rate limiting, and a forwarded link works for whoever holds it.
+- The link flow is unit tested, but no automated test drives the real HTTP endpoint end to end.
 - The Twilio gateway is implemented but has not been run against a live account.
 - Side-effect events are published after commit without retry. A crash at that moment loses the event. An outbox table would fix it.
 - The analytics consumer retries for about a minute, then skips the event. There is no dead-letter topic.
